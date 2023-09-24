@@ -1,0 +1,13 @@
+@startuml
+!theme plain
+top to bottom direction
+skinparam linetype ortho
+
+class node0 as "POSTGRES - stocks_history  /* История стоков  */" {
+   ticker  /* тикер */: varchar
+   stock  /* цена */: bigint
+   change_percentage  /* изменение относительного предыдущего времени, % */: int
+   actual_on  /* актуальное время */: datetime
+}
+
+@enduml

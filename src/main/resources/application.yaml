@@ -1,0 +1,31 @@
+server:
+  port: 8088
+  shutdown: graceful
+  forward-headers-strategy: framework
+
+spring:
+  main:
+    web-application-type: reactive
+  application:
+    name: stocks-observer
+  r2dbc:
+    url: ${POSTGRES_URL}
+    username: ${POSTGRES_USERNAME}
+    password: ${POSTGRES_PASSWORD}
+  jackson:
+    deserialization:
+      ADJUST_DATES_TO_CONTEXT_TIME_ZONE: false
+      FAIL_ON_UNKNOWN_PROPERTIES: false
+      FAIL_ON_NUMBERS_FOR_ENUMS: true
+      FAIL_ON_NULL_FOR_PRIMITIVES: true
+      USE_BIG_DECIMAL_FOR_FLOATS: true
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: false
+    generator:
+      WRITE_BIGDECIMAL_AS_PLAIN: true
+
+logging:
+  level:
+    ROOT: INFO
+  pattern:
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} [%thread] %clr(%-5level) %clr(%logger{36}){magenta} - %msg%n"

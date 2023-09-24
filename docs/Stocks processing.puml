@@ -1,0 +1,40 @@
+@startuml
+skinparam sequenceArrowThickneSFC 2
+skinparam roundcorner 20
+
+database PostgreSQL as DB order 80
+
+box "External"
+participant StocksFeedService as SFC
+end box
+
+box "Stocks Observer Application"
+participant StocksClient as SC
+participant StocksHistoryRepository as SHR
+end box
+
+SC --> SFC: getCompanies
+activate SFC
+SC <-- SFC: CompaniesList
+deactivate SFC
+
+SC --> SFC: getStocksForCompany
+activate SFC
+SC <-- SFC: getCompanyCurrentStock
+deactivate SFC
+
+activate SC
+SC --> SC: calculateDiff
+SC --> SHR: saveStockToHistory
+SHR --> DB: saveStockToHistory
+deactivate SC
+
+SC --> SC: printTop5
+activate SC
+SC --> SHR: getTop5
+SHR --> DB: getTop5
+SHR <-- DB: top5
+SC <-- SHR: top5
+deactivate SC
+
+@enduml
