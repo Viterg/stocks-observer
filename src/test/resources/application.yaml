@@ -4,6 +4,11 @@ spring:
     username: postgres
     password: postgres
 
+application:
+  client:
+    sourceUrl: http://localhost:8086/api/v1/sec
+    apikey: 31f45a0d-cdf6-44bb-b205-efd7484c0716
+
 logging:
   level:
     ROOT: INFO

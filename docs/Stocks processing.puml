@@ -10,31 +10,34 @@ end box
 
 box "Stocks Observer Application"
 participant StocksClient as SC
+participant StocksService as SS
 participant StocksHistoryRepository as SHR
 end box
 
 SC --> SFC: getCompanies
 activate SFC
 SC <-- SFC: CompaniesList
+SC --> SS: storeInTempStorage
 deactivate SFC
 
-SC --> SFC: getStocksForCompany
+SC --> SFC: getStocksForCompany(sheduled)
 activate SFC
 SC <-- SFC: getCompanyCurrentStock
+SC --> SS: storeInQueue
 deactivate SFC
 
-activate SC
-SC --> SC: calculateDiff
-SC --> SHR: saveStockToHistory
-SHR --> DB: saveStockToHistory
-deactivate SC
+activate SS
+SS --> SS: calculateDiff
+SS --> SHR: saveStocksFromQueueToHistory
+SHR --> DB: saveStocksFromQueueToHistory
+deactivate SS
 
-SC --> SC: printTop5
-activate SC
-SC --> SHR: getTop5
+SS --> SS: printTop5
+activate SS
+SS --> SHR: getTop5
 SHR --> DB: getTop5
 SHR <-- DB: top5
-SC <-- SHR: top5
-deactivate SC
+SS <-- SHR: top5
+deactivate SS
 
 @enduml
