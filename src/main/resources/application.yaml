@@ -12,6 +12,9 @@ spring:
     url: ${POSTGRES_URL}
     username: ${POSTGRES_USERNAME}
     password: ${POSTGRES_PASSWORD}
+    pool:
+      initial-size: 4
+      max-size: 16
   jackson:
     deserialization:
       ADJUST_DATES_TO_CONTEXT_TIME_ZONE: false
@@ -23,6 +26,11 @@ spring:
       WRITE_DATES_AS_TIMESTAMPS: false
     generator:
       WRITE_BIGDECIMAL_AS_PLAIN: true
+
+application:
+  client:
+    sourceUrl: http://localhost:8086/api/v1/sec
+    apikey: 31f45a0d-cdf6-44bb-b205-efd7484c0716
 
 logging:
   level:

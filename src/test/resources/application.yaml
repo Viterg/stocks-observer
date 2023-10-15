@@ -3,6 +3,9 @@ spring:
     url: r2dbc:postgresql://localhost:5432/postgres
     username: postgres
     password: postgres
+  datasource:
+    container-name: postgres:13.7
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
 
 application:
   client:
