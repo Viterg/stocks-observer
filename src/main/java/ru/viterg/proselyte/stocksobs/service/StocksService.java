@@ -40,6 +40,20 @@ public class StocksService {
                 .subscribe();
     }
 
+    @Scheduled(fixedRate = 2L, timeUnit = SECONDS)
+    public void saveStocksForTickersInSequential() {
+        log.debug("Saving stocks for tickers: {} -- START", tickers);
+        long start = System.currentTimeMillis();
+        for (String ticker : tickers) {
+            client.getStock(ticker)
+                    .flatMap(stock -> repository.save(new StocksHistory(ticker, stock)))
+                    .subscribe(stocksHistory -> log.info("Stock saved {}", stocksHistory));
+        }
+        long end = System.currentTimeMillis() - start;
+        log.info("All stocks were updated");
+        log.debug("Saving stocks for tickers: {} -- END, executing time: {}ms", tickers, end);
+    }
+
     public void saveStocksForTickersInParallel() {
         log.debug("Saving stocks for tickers: {} -- START", tickers);
         long start = System.currentTimeMillis();
@@ -49,19 +63,6 @@ public class StocksService {
                 .map(p -> new StocksHistory(p.getFirst(), p.getSecond()))
                 .toList();
         repository.saveAll(histories).subscribe();
-        long end = System.currentTimeMillis() - start;
-        log.info("All stocks were updated");
-        log.debug("Saving stocks for tickers: {} -- END, executing time: {}ms", tickers, end);
-    }
-
-    public void saveStocksForTickersInSequential() {
-        log.debug("Saving stocks for tickers: {} -- START", tickers);
-        long start = System.currentTimeMillis();
-        for (String ticker : tickers) {
-            client.getStock(ticker)
-                    .flatMap(stock -> repository.save(new StocksHistory(ticker, stock)))
-                    .subscribe(stocksHistory -> log.info("Stock saved {}", stocksHistory));
-        }
         long end = System.currentTimeMillis() - start;
         log.info("All stocks were updated");
         log.debug("Saving stocks for tickers: {} -- END, executing time: {}ms", tickers, end);
