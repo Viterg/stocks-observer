@@ -19,6 +19,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -77,17 +78,19 @@ class StocksServiceTest {
         StocksHistory sh3 = new StocksHistory("TSLA", BigDecimal.valueOf(98.631));
         stocksService.getTickers().addAll(List.of("AAPL", "MSFT", "TSLA"));
 
-        when(client.getStockWithTicker("AAPL")).thenReturn(Mono.just(Pair.of("AAPL", BigDecimal.valueOf(284.22))));
-        when(client.getStockWithTicker("MSFT")).thenReturn(Mono.just(Pair.of("MSFT", BigDecimal.valueOf(144.29))));
-        when(client.getStockWithTicker("TSLA")).thenReturn(Mono.just(Pair.of("TSLA", BigDecimal.valueOf(98.631))));
-        when(repository.saveAll((Iterable<StocksHistory>) any())).thenReturn(Flux.just(sh1, sh2, sh3));
+        when(client.getStock("AAPL")).thenReturn(Mono.just(BigDecimal.valueOf(284.22)));
+        when(repository.save(sh1)).thenReturn(Mono.just(sh1));
+        when(client.getStock("MSFT")).thenReturn(Mono.just(BigDecimal.valueOf(144.29)));
+        when(repository.save(sh2)).thenReturn(Mono.just(sh2));
+        when(client.getStock("TSLA")).thenReturn(Mono.just(BigDecimal.valueOf(98.631)));
+        when(repository.save(sh3)).thenReturn(Mono.just(sh3));
 
         stocksService.saveStocksForTickersInSequential();
 
-        verify(client).getStockWithTicker("AAPL");
-        verify(client).getStockWithTicker("MSFT");
-        verify(client).getStockWithTicker("TSLA");
-        verify(repository).saveAll((Iterable<StocksHistory>) any());
+        verify(client).getStock("AAPL");
+        verify(client).getStock("MSFT");
+        verify(client).getStock("TSLA");
+        verify(repository, times(3)).save(any());
     }
 
     @Test

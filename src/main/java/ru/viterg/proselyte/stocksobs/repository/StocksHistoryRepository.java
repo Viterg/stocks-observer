@@ -31,7 +31,7 @@ public interface StocksHistoryRepository extends R2dbcRepository<StocksHistory, 
      */
     @Query("""
            SELECT * FROM (
-               SELECT DISTINCT ON (ticker) * FROM stocks_history ORDER BY ticker ASC, actual_on DESC) AS latest
+               SELECT DISTINCT ON (ticker) * FROM stocks_history ORDER BY ticker, actual_on DESC) AS latest
            ORDER BY change_percentage DESC LIMIT :limit;
            """)
     Flux<StocksHistory> getWithLargestPercentageChange(int limit);

@@ -46,7 +46,9 @@ dependencies {
     testAnnotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation "org.testcontainers:testcontainers:$pgTestcontainerVersion"
     testImplementation "org.testcontainers:postgresql:$pgTestcontainerVersion"
+    testImplementation "org.testcontainers:r2dbc:$pgTestcontainerVersion"
     testImplementation "org.wiremock:wiremock:$wiremockVersion"
     testImplementation 'io.projectreactor:reactor-test'
 }

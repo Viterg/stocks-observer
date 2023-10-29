@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import ru.viterg.proselyte.stocksobs.client.StocksClient;
 import ru.viterg.proselyte.stocksobs.entity.StocksHistory;
@@ -15,7 +14,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -34,36 +32,39 @@ public class StocksService {
     @Scheduled(fixedDelay = 1L, timeUnit = DAYS)
     public void saveAllTickers() {
         Mono<List<String>> ofRemoteTickers = client.getCompanies();
-        ofRemoteTickers.doOnSuccess(remoteTickers -> {
+        ofRemoteTickers.flatMap(remoteTickers -> {
                     tickers.clear();
                     tickers.addAll(remoteTickers);
+                    return Mono.just(tickers);
                 })
                 .subscribe();
     }
 
     public void saveStocksForTickersInParallel() {
+        log.debug("Saving stocks for tickers: {} -- START", tickers);
+        long start = System.currentTimeMillis();
         List<StocksHistory> histories = tickers.parallelStream()
                 .map(ticker -> client.getStockWithTicker(ticker).toFuture())
                 .map(CompletableFuture::join)
                 .map(p -> new StocksHistory(p.getFirst(), p.getSecond()))
                 .toList();
-        repository.saveAll(histories).subscribe(stocksHistory -> log.info("All stocks were updated"));
-    }
-
-    public void saveStocksForTickersInParallel2() {
-        Iterable<StocksHistory> histories = Flux.fromStream(tickers.parallelStream().map(client::getStockWithTicker))
-                .flatMap(Function.identity())
-                .map(p -> new StocksHistory(p.getFirst(), p.getSecond()))
-                .toIterable();
-        repository.saveAll(histories).subscribe(stocksHistory -> log.info("All stocks were updated"));
+        repository.saveAll(histories).subscribe();
+        long end = System.currentTimeMillis() - start;
+        log.info("All stocks were updated");
+        log.debug("Saving stocks for tickers: {} -- END, executing time: {}ms", tickers, end);
     }
 
     public void saveStocksForTickersInSequential() {
+        log.debug("Saving stocks for tickers: {} -- START", tickers);
+        long start = System.currentTimeMillis();
         for (String ticker : tickers) {
             client.getStock(ticker)
                     .flatMap(stock -> repository.save(new StocksHistory(ticker, stock)))
                     .subscribe(stocksHistory -> log.info("Stock saved {}", stocksHistory));
         }
+        long end = System.currentTimeMillis() - start;
+        log.info("All stocks were updated");
+        log.debug("Saving stocks for tickers: {} -- END, executing time: {}ms", tickers, end);
     }
 
     @Scheduled(fixedRate = 5L, timeUnit = SECONDS)
@@ -72,7 +73,7 @@ public class StocksService {
                 .collectList()
                 .doOnSuccess(sh -> log.info("\n --- Top-5 most expensive stocks at this moment ---\n{}",
                                             formatToTable(sh, StocksHistory::getStock)))
-                .then(repository.getMostExpensiveStocksForLastTime(5).collectList())
+                .then(repository.getWithLargestPercentageChange(5).collectList())
                 .subscribe(sh -> log.info("\n --- Top-5 most changed stocks at this moment ---\n{}",
                                           formatToTable(sh, StocksHistory::getChangePercentage)));
     }

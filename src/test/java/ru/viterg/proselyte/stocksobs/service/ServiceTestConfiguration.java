@@ -1,14 +1,17 @@
 package ru.viterg.proselyte.stocksobs.service;
 
 import io.netty.handler.timeout.ReadTimeoutHandler;
+import io.r2dbc.spi.ConnectionFactories;
+import io.r2dbc.spi.ConnectionFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.PostgreSQLR2DBCDatabaseContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import reactor.netty.http.client.HttpClient;
 import ru.viterg.proselyte.stocksobs.client.StocksClient;
@@ -20,10 +23,8 @@ import static io.netty.channel.ChannelOption.CONNECT_TIMEOUT_MILLIS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 @Configuration
-@EnableR2dbcRepositories
+@EnableR2dbcRepositories(basePackages = "ru.viterg.proselyte.stocksobs.repository")
 public class ServiceTestConfiguration {
-
-    private static PostgreSQLContainer<?> postgreSQLContainer;
 
     @Value("${spring.datasource.container-name}")
     private String containerName;
@@ -33,14 +34,31 @@ public class ServiceTestConfiguration {
     private String password;
 
     @Bean(initMethod = "start", destroyMethod = "stop")
-    public JdbcDatabaseContainer<?> postgreSQLContainer() {
-        if (postgreSQLContainer == null) {
-            postgreSQLContainer = new PostgreSQLContainer<>(containerName)
-                    .withUsername(username)
-                    .withPassword(password)
-                    .waitingFor(Wait.forListeningPort());
-        }
-        return postgreSQLContainer;
+    public PostgreSQLR2DBCDatabaseContainer postgreSQLContainerR2dbc(PostgreSQLContainer postgreSQLContainer) {
+        return new PostgreSQLR2DBCDatabaseContainer(postgreSQLContainer);
+    }
+
+    @Bean
+    public PostgreSQLContainer<?> postgreSQLContainer() {
+        return new PostgreSQLContainer<>(containerName)
+                .withUsername(username)
+                .withPassword(password)
+                .withInitScript("db/init_stocks_history.sql")
+                .waitingFor(Wait.forListeningPort());
+    }
+
+    @Bean
+    public ConnectionFactory connectionFactory(PostgreSQLContainer postgreSQLContainer) {
+        return ConnectionFactories.get(String.format("r2dbc:postgresql://%s:%s@%s:%s/postgres",
+                                                     username,
+                                                     password,
+                                                     postgreSQLContainer.getHost(),
+                                                     postgreSQLContainer.getFirstMappedPort()));
+    }
+
+    @Bean
+    public R2dbcEntityTemplate r2dbcEntityTemplate(ConnectionFactory connectionFactory) {
+        return new R2dbcEntityTemplate(connectionFactory);
     }
 
     @Bean
