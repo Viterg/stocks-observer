@@ -26,12 +26,6 @@ spring:
       WRITE_DATES_AS_TIMESTAMPS: false
     generator:
       WRITE_BIGDECIMAL_AS_PLAIN: true
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: http://localhost:8084
-#          jwk-set-uri:
 
 application:
   client:
