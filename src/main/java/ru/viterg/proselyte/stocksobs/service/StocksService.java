@@ -10,6 +10,7 @@ import ru.viterg.proselyte.stocksobs.client.StocksClient;
 import ru.viterg.proselyte.stocksobs.entity.StocksHistory;
 import ru.viterg.proselyte.stocksobs.repository.StocksHistoryRepository;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -29,6 +30,16 @@ public class StocksService {
     @Getter
     private final Collection<String> tickers = new HashSet<>(8000);
 
+    public List<String> getCompanies() {
+        List<String> sortedTickers = new ArrayList<>(tickers);
+        sortedTickers.sort(String::compareTo);
+        return sortedTickers;
+    }
+
+    public Mono<StocksHistory> getStock(String ticker) {
+        return repository.getLatestStock(ticker);
+    }
+
     @Scheduled(fixedDelay = 1L, timeUnit = DAYS)
     public void saveAllTickers() {
         Mono<List<String>> ofRemoteTickers = client.getCompanies();
@@ -40,6 +51,9 @@ public class StocksService {
                 .subscribe();
     }
 
+    /**
+     * Saves stocks for tickers in sequential order.
+     */
     @Scheduled(fixedRate = 2L, timeUnit = SECONDS)
     public void saveStocksForTickersInSequential() {
         log.debug("Saving stocks for tickers: {} -- START", tickers);
@@ -54,6 +68,9 @@ public class StocksService {
         log.debug("Saving stocks for tickers: {} -- END, executing time: {}ms", tickers, end);
     }
 
+    /**
+     * Saves stocks for tickers in parallel.
+     */
     public void saveStocksForTickersInParallel() {
         log.debug("Saving stocks for tickers: {} -- START", tickers);
         long start = System.currentTimeMillis();
@@ -68,6 +85,13 @@ public class StocksService {
         log.debug("Saving stocks for tickers: {} -- END, executing time: {}ms", tickers, end);
     }
 
+    /**
+     * This method is scheduled to run at a fixed rate of 5 seconds.
+     * It retrieves the top 5 most expensive stocks for the last period of time from the repository,
+     * formats them into a table, and logs the result.
+     * Then, it retrieves the top 5 stocks with the largest percentage change from the repository,
+     * formats them into a table, and logs the result.
+     */
     @Scheduled(fixedRate = 5L, timeUnit = SECONDS)
     public void printTop5() {
         repository.getMostExpensiveStocksForLastTime(5)

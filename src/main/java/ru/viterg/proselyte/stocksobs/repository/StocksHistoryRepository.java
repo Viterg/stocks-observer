@@ -4,10 +4,20 @@ import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import ru.viterg.proselyte.stocksobs.entity.StocksHistory;
 
 @Repository
 public interface StocksHistoryRepository extends R2dbcRepository<StocksHistory, String> {
+
+    /**
+     * Retrieves the latest stock history for the given ticker.
+     *
+     * @param ticker the ticker symbol of the stock
+     * @return a Mono object representing the latest stock history
+     */
+    @Query("SELECT * FROM stocks_history WHERE ticker = :ticker ORDER BY actual_on DESC LIMIT 1")
+    Mono<StocksHistory> getLatestStock(String ticker);
 
     /**
      * Retrieves the top stocks with the highest value.
